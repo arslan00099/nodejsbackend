@@ -9,7 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
     - name: Install dependencies
       run: npm install
@@ -20,7 +21,8 @@ jobs:
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "./"  # This now correctly points to the current directory
+        port: 22  # Optional: Specify the SSH port if different
+        source: "./"  # Deploy the current directory contents
         target: "/var/www/nodejsbackend"
 
     - name: Restart PM2 application
@@ -29,6 +31,7 @@ jobs:
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22  # Optional: Specify the SSH port if different
         script: |
           cd /var/www/nodejsbackend
-          pm2 reload all  # This command restarts your application
+          pm2 reload all  # Reload or restart the PM2-managed application
