@@ -1,0 +1,338 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  JOB_SEEKER
+  MENTOR
+  RECRUITER
+  EMPLOYER
+  ADMIN
+}
+
+enum JobStatus {
+  OPEN
+  HIRED
+  CLOSED
+  CANCELLED
+  ONHOLD
+}
+
+enum SessionStatus {
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  WAITING
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum HiringStatus {
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum TimesheetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BlogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  role          UserRole
+  resume        String?
+  email_confirm Boolean   @default(false)
+  profileId     Int?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  Profile       Profile[]
+  Education     Education[]
+  Certificate   Certificate[]
+  Location      Location[]
+  EmpolymentHistory EmpolymentHistory[]
+  Documents     Documents[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Profile {
+  id               Int               @id @default(autoincrement())
+  userId           Int               @unique
+  user             User              @relation(fields: [userId], references: [id])
+  fullname         String
+  phnumber         Int
+  avatarId         String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  JobSeekerProfile JobSeekerProfile?
+  MentorProfile    MentorProfile?
+  RecruiterProfile RecruiterProfile?
+  EmployerProfile  EmployerProfile?
+  AdminProfile     AdminProfile?
+}
+
+model JobSeekerProfile {
+  id                      Int                       @id @default(autoincrement())
+  resume                  String?
+  profileId               Int                       @unique
+  profile                 Profile                   @relation(fields: [profileId], references: [id])
+  JobApplication          JobApplication[]
+  MentorSessionManagement MentorSessionManagement[]
+}
+
+
+model Education{
+id              Int               @id @default(autoincrement())
+degreName       String
+universityName  String
+description     String
+startFrom       String
+endIn           String 
+userId          Int               @unique
+user            User              @relation(fields: [userId], references: [id])
+}
+
+model Certificate{
+id              Int               @id @default(autoincrement())
+certName       String
+orgName        String
+completedOn    String 
+startedOn      String?    //for prisma error remove it when setup new db 
+userId         Int               @unique
+user           User              @relation(fields: [userId], references: [id])
+}
+
+model EmpolymentHistory{
+id             Int               @id @default(autoincrement())
+company        String
+jobTitle       String
+description    String 
+startedOn      String
+endOn          String
+userId         Int               @unique
+user           User              @relation(fields: [userId], references: [id])
+}
+
+
+model Location{
+id              Int              @id @default(autoincrement())
+city            String
+state           String
+country         String
+postalCode      Int
+userId          Int               @unique
+user            User              @relation(fields: [userId], references: [id])
+}
+
+model Documents{
+id              Int              @id @default(autoincrement())
+resumeLink        String
+portfolioLink     String
+websiteLink       String?
+additionalLink      String?
+userId            Int                 @unique
+user              User              @relation(fields: [userId], references: [id])
+}
+
+model MentorProfile {
+  id                      Int                       @id @default(autoincrement())
+  name                    String
+  resume                  String?
+  profileId               Int                       @unique
+  profile                 Profile                   @relation(fields: [profileId], references: [id])
+  linkedinProfile         String
+  MentorSessionManagement MentorSessionManagement[]
+  services                Service[]
+  Blog                    Blog[]
+  Booking                 Booking[]
+  Earning                 Earning[]
+}
+
+model RecruiterProfile {
+  id              Int               @id @default(autoincrement())
+  name            String
+  resume          String?
+  linkedinProfile String
+  profileId       Int               @unique
+  profile         Profile           @relation(fields: [profileId], references: [id])
+  RecruiterHiring RecruiterHiring[]
+  TimeSheet       TimeSheet[]
+  Booking         Booking[]
+  Earning         Earning[]
+}
+
+model AdminProfile {
+  id        Int         @id @default(autoincrement())
+  profileId Int         @unique
+  profile   Profile     @relation(fields: [profileId], references: [id])
+  TimeSheet TimeSheet[]
+  Blog      Blog[]
+}
+
+model EmployerProfile {
+  id              Int               @id @default(autoincrement())
+  profileId       Int               @unique
+  resume          String?
+  profile         Profile           @relation(fields: [profileId], references: [id])
+  JobApplication  JobApplication[]
+  JobPost         JobPost[]
+  RecruiterHiring RecruiterHiring[]
+  Timesheet       TimeSheet[]
+}
+
+model JobApplication {
+  id               Int              @id @default(autoincrement())
+  jobTitle         String
+  jobDescription   String
+  tags             String
+  jsId             Int
+  JobSeekerProfile JobSeekerProfile @relation(fields: [jsId], references: [id])
+  postedBy         Int
+  EmployerProfile  EmployerProfile  @relation(fields: [postedBy], references: [id])
+  jobStatus        JobStatus
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  JobPost          JobPost?         @relation(fields: [jobPostId], references: [id])
+  jobPostId        Int?
+ 
+
+  @@index([tags])
+  @@index([jobTitle])
+  @@index([jsId])
+  @@index([postedBy])
+}
+
+model Service {
+  id              Int               @id @default(autoincrement())
+  name            String
+  mentorProfileId Int
+  mentorProfile   MentorProfile     @relation(fields: [mentorProfileId], references: [id])
+  RecruiterHiring RecruiterHiring[]
+}
+
+model MentorSessionManagement {
+  sessionId        Int              @id @default(autoincrement())
+  agenda           String
+  selectedService  String
+  time             DateTime
+  price            Int
+  status           SessionStatus
+  jsId             Int
+  JobSeekerProfile JobSeekerProfile @relation(fields: [jsId], references: [id])
+  mentorId         Int
+  MentorProfile    MentorProfile    @relation(fields: [mentorId], references: [id])
+  paymentStatus    PaymentStatus
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model JobPost {
+  id              Int              @id @default(autoincrement())
+  title           String
+  description     String
+  location        String
+  applicationLink String
+  employerId      Int
+  employerProfile EmployerProfile  @relation(fields: [employerId], references: [id])
+  JobApplication  JobApplication[]
+  status          JobStatus        @default(OPEN)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model RecruiterHiring {
+  id               Int              @id @default(autoincrement())
+  employerId       Int
+  serviceId        Int
+  service          Service          @relation(fields: [serviceId], references: [id])
+  employerProfile  EmployerProfile  @relation(fields: [employerId], references: [id])
+  recruiterId      Int
+  RecruiterProfile RecruiterProfile @relation(fields: [recruiterId], references: [id])
+  status           HiringStatus
+}
+
+model TimeSheet {   // needs to be fixed for only Fuse admin, employer, Recruiter
+  id          Int              @id @default(autoincrement())
+  employerId       Int
+  job         EmployerProfile   @relation(fields: [employerId], references: [id])
+  recruiterId Int
+  recruiter   RecruiterProfile @relation(fields: [recruiterId], references: [id])
+  fuseAdminId Int?
+  fuseAdmin   AdminProfile?    @relation(fields: [fuseAdminId], references: [id])
+  status      TimesheetStatus  @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Blog {   //Mentor will write  the Blog
+  id          Int           @id @default(autoincrement())
+  title       String
+  content     String
+  status      BlogStatus    @default(PENDING)
+  mentorId    Int
+  mentor      MentorProfile @relation(fields: [mentorId], references: [id])
+  fuseAdminId Int?
+  fuseAdmin   AdminProfile? @relation(fields: [fuseAdminId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Booking { // 
+  id          Int               @id @default(autoincrement())
+  date        DateTime
+  duration    Int // Duration in minutes
+  mentorId    Int?
+  mentor      MentorProfile?    @relation(fields: [mentorId], references: [id])
+  recruiterId Int?
+  recruiter   RecruiterProfile? @relation(fields: [recruiterId], references: [id])
+  status      BookingStatus     @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Earning {
+  id          Int               @id @default(autoincrement())
+  amount      Float
+  date        DateTime
+  mentorId    Int?
+  mentor      MentorProfile?    @relation(fields: [mentorId], references: [id])
+  recruiterId Int?
+  recruiter   RecruiterProfile? @relation(fields: [recruiterId], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
